@@ -49,7 +49,7 @@ class VoxNovelShowcaseScroll extends HTMLElement {
         <section data-index="1">
           <div class="feature-section">
             <div class="feature-text" data-animate>
-              <div class="feature-label">Step 2.5 — Engine Selection</div>
+              <div class="feature-label">Step 3 — Engine Selection</div>
               <h2 class="feature-title">Dual-engine<br>architecture</h2>
               <p class="feature-desc">Choose XTTS v2 for GPU-accelerated voice cloning with emotion transfer, or F5-TTS for lightning-fast CPU synthesis. Switch mid-workflow, lose nothing.</p>
               <ul class="feature-bullets">
@@ -92,11 +92,11 @@ class VoxNovelShowcaseScroll extends HTMLElement {
               ${[
                 { num: '1', name: 'Upload', desc: 'EPUB / TXT' },
                 { num: '2', name: 'Extract', desc: 'BookNLP' },
-                { num: '2.5', name: 'Engine', desc: 'XTTS / F5' },
-                { num: '3', name: 'Voices', desc: 'Clone & Assign' },
-                { num: '4', name: 'Generate', desc: 'GPU Synthesis' },
-                { num: '5', name: 'Review', desc: 'QA & Regen' },
-                { num: '6', name: 'Export', desc: 'M4B / MP3' },
+                { num: '3', name: 'Engine', desc: 'XTTS / F5' },
+                { num: '4', name: 'Voices', desc: 'Clone & Assign' },
+                { num: '5', name: 'Generate', desc: 'GPU Synthesis' },
+                { num: '6', name: 'Review', desc: 'QA & Regen' },
+                { num: '7', name: 'Export', desc: 'M4B / MP3' },
               ].map((s, i) => `
                 <div class="step-card" data-animate data-delay="${i * 100}">
                   <div class="step-num">${s.num}</div>
