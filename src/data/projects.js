@@ -4,7 +4,7 @@ export const projects = [
   {
     id: 'milkman-audiobook',
     name: 'MilkMan Audiobook Generator',
-    repo: 'personal webapp portfolio',
+    showRepo: false,
     tagline:
       'Long-form books → NLP extraction → multi-engine TTS → per-clip QA → downloadable audiobooks',
     stack: ['React', 'Vite', 'Flask', 'BookNLP', 'XTTS v2', 'Playwright'],
@@ -22,7 +22,7 @@ export const projects = [
   {
     id: 'war-council',
     name: 'War Council',
-    repo: 'war-council',
+    showRepo: false,
     tagline: 'Local-first MCP orchestration — route tasks, tournament votes, RAG, live Battle Log',
     stack: ['Node MCP', 'Ollama', 'HNSW RAG', 'SSE Dashboard', 'Cursor hooks'],
     highlights: [

@@ -1,23 +1,14 @@
 import { useEffect, useState } from 'react';
 import { projectHref, siteUrls } from '../config/site.js';
-
-const SCROLL_BREAKPOINT = 1024;
+import { useShowcaseMode } from '../hooks/useShowcaseMode.js';
+import ShowcaseViewToggle from './ShowcaseViewToggle.jsx';
 
 /**
- * MilkMan Audiobook Generator embed — scroll tour (desktop/tablet) or card (mobile).
- * Web component scripts live in the sibling showcase repo (legacy filenames).
+ * MilkMan Audiobook Generator embed — scroll tour or preview card.
  */
 export default function MilkmanShowcase() {
-  const [mode, setMode] = useState('card');
+  const { mode, setManualMode } = useShowcaseMode();
   const [scriptsReady, setScriptsReady] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(min-width: ${SCROLL_BREAKPOINT}px)`);
-    const pick = () => setMode(mq.matches ? 'scroll' : 'card');
-    pick();
-    mq.addEventListener('change', pick);
-    return () => mq.removeEventListener('change', pick);
-  }, []);
 
   useEffect(() => {
     const src =
@@ -27,6 +18,7 @@ export default function MilkmanShowcase() {
       setScriptsReady(true);
       return;
     }
+    setScriptsReady(false);
     document.querySelectorAll('script[data-milkman-showcase]').forEach((s) => s.remove());
     const el = document.createElement('script');
     el.src = src;
@@ -43,20 +35,7 @@ export default function MilkmanShowcase() {
 
   return (
     <div className="milkman-showcase-wrap" data-mode={mode}>
-      <p className="showcase-mode-label" aria-live="polite">
-        {mode === 'scroll' ? (
-          <>
-            <strong>Desktop & tablet:</strong> scroll the panel below for a full feature tour (snap
-            sections, not the whole page). Resize narrower than {SCROLL_BREAKPOINT}px to see the
-            mobile card instead.
-          </>
-        ) : (
-          <>
-            <strong>Mobile:</strong> compact preview card — no scroll-snap tour. Widen past{' '}
-            {SCROLL_BREAKPOINT}px for the in-panel scroll showcase.
-          </>
-        )}
-      </p>
+      <ShowcaseViewToggle mode={mode} onModeChange={setManualMode} />
       {!scriptsReady && <p className="showcase-loading">Loading showcase…</p>}
       {scriptsReady && mode === 'card' && (
         <voxnovel-showcase href={appHref} api={apiBase} target="_blank" rel="noreferrer" />

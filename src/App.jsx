@@ -21,9 +21,6 @@ function Nav() {
         <a href="#testimonials">Testimonials</a>
         <a href="#experience">Experience</a>
         <a href="#contact">Contact</a>
-        <a href={profile.warCouncilUrl} className="nav-live" target="_blank" rel="noreferrer">
-          Command Center ↗
-        </a>
       </nav>
     </header>
   );
@@ -93,7 +90,9 @@ function ProjectCard({ project }) {
         </div>
       )}
       <div className="project-body">
-        <p className="project-repo">{project.repo}</p>
+        {project.showRepo !== false && project.repo ? (
+          <p className="project-repo">{project.repo}</p>
+        ) : null}
         <h3>{project.name}</h3>
         <p className="project-tagline">{project.tagline}</p>
         <ul className="project-highlights">
@@ -124,9 +123,6 @@ function Projects() {
   return (
     <section className="section section-dark" id="projects">
       <h2 className="section-title">Workspace showcases</h2>
-      <p className="section-lead">
-        Three repos in one Cursor workspace — each with agents, tests, and (where applicable) live UI.
-      </p>
       <div className="project-list">
         {projects.map((p) => (
           <ProjectCard key={p.id} project={p} />
