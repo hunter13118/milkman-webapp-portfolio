@@ -27,7 +27,7 @@ class VoxNovelShowcaseScroll extends HTMLElement {
       <div class="showcase-root">
         <div class="scroll-progress"></div>
         <nav class="nav" aria-label="Showcase slides">
-          <div class="nav-brand">🎧 Milkman Audiobook Generator</div>
+          <div class="nav-brand">Milkman Audiobook Generator</div>
           <div class="nav-steps">
             ${Array.from({length: 6}, (_, i) => `<div class="nav-step${i === 0 ? ' active' : ''}" data-section="${i}" role="button" tabindex="0" aria-label="Slide ${i + 1}"></div>`).join('')}
           </div>
@@ -419,12 +419,12 @@ class VoxNovelShowcaseScroll extends HTMLElement {
 
       /* STEPS */
       .steps-section { text-align: center; max-width: 1000px; }
-      .steps-section h2 { font-size: clamp(32px, 5vw, 52px); font-weight: 800; letter-spacing: -2px; margin-bottom: 16px; }
-      .section-sub { font-size: 18px; color: var(--slate); margin-bottom: 64px; }
-      .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 20px; width: 100%; }
+      .steps-section h2 { font-size: clamp(24px, 3.5vw, 36px); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 12px; line-height: 1.15; }
+      .section-sub { font-size: 18px; color: var(--slate); margin-bottom: 24px; }
+      .steps-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; width: 100%; }
       .step-card {
         background: var(--navy-light); border: 1px solid #2d3f5e; border-radius: 12px;
-        padding: 24px 16px; text-align: center; opacity: 0; transform: translateY(40px);
+        padding: 14px 10px; text-align: center; opacity: 0; transform: translateY(40px);
         transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .step-card.visible { opacity: 1; transform: translateY(0); }
@@ -463,6 +463,20 @@ class VoxNovelShowcaseScroll extends HTMLElement {
 
       /* ANIMATIONS */
       @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+      /* Embedded portfolio viewport (~640px tall) */
+      @media (max-height: 720px) {
+        section[data-index="3"] {
+          padding: calc(var(--nav-h) + 8px) 20px 12px;
+        }
+        section[data-index="3"] .steps-section h2 { font-size: 1.35rem; margin-bottom: 6px; }
+        section[data-index="3"] .section-sub { font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4; }
+        section[data-index="3"] .steps-grid { gap: 6px; }
+        section[data-index="3"] .step-card { padding: 8px 4px; border-radius: 8px; }
+        section[data-index="3"] .step-num { font-size: 15px; margin-bottom: 2px; }
+        section[data-index="3"] .step-name { font-size: 9px; }
+        section[data-index="3"] .step-desc { font-size: 8px; line-height: 1.2; }
+      }
 
       /* RESPONSIVE */
       @media (max-width: 768px) {

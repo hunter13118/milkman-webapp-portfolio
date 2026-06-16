@@ -309,7 +309,6 @@ class VoxNovelShowcase extends HTMLElement {
         </div>
         <div class="content">
           <div class="header">
-            <span class="icon">🎧</span>
             <div>
               <div class="title">Milkman Audiobook Generator</div>
               <div class="subtitle">AI-Powered Voice Cloning</div>

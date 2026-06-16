@@ -20,7 +20,7 @@ class WarCouncilShowcaseScroll extends HTMLElement {
       <div class="showcase-root">
         <div class="scroll-progress"></div>
         <nav class="nav" aria-label="Showcase slides">
-          <div class="nav-brand">⚔️ War Council</div>
+          <div class="nav-brand">War Council</div>
           <div class="nav-steps">
             ${Array.from({length: 6}, (_, i) => `<div class="nav-step${i === 0 ? ' active' : ''}" data-section="${i}" role="button" tabindex="0" aria-label="Slide ${i + 1}"></div>`).join('')}
           </div>

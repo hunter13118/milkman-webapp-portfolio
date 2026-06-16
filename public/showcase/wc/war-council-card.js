@@ -53,7 +53,7 @@ class WarCouncilShowcase extends HTMLElement {
         .dot.offline { background: #64748b; }
       </style>
       <div class="card" part="card">
-        <div class="title">⚔️ War Council</div>
+        <div class="title">War Council</div>
         <div class="sub">MCP orchestration · Battle Log · local + cloud LLMs</div>
         <div class="tags">
           <span class="tag">smart_route</span>
