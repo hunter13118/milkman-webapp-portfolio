@@ -37,35 +37,36 @@ VITE_MILKMAN_APP_URL=http://localhost:3000
 VITE_WAR_COUNCIL_URL=http://localhost:3737/command-center
 ```
 
-## Cloudflare Pages
+## Cloudflare Workers Builds (Git — recommended)
 
-The site is **fully static** after `npm run build` — no backend required. Showcases use vendored web components + Playwright screenshots under `public/showcase/`.
+Cloudflare runs **build**, then **deploy**, as separate steps. In **Settings → Build**:
 
-### Connect GitHub (recommended)
+| Field | Command |
+|-------|---------|
+| **Build command** | `npm run build` |
+| **Deploy command** (production branch) | `npx wrangler deploy` |
+| **Non-production branch deploy command** | `npx wrangler versions upload` |
 
-1. Push this repo to GitHub (`milkman-webapp-portfolio`).
-2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Build settings:
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-   - **Node version:** `20` (or set `NODE_VERSION=20` env var)
-4. Optional environment variables (Production + Preview):
+Set **Node version** to `20` (`NODE_VERSION=20`). Enable **Builds for non-production branches** for PR preview URLs.
 
-   | Variable | Purpose |
-   |----------|---------|
-   | `VITE_MILKMAN_APP_URL` | Live audiobook app link (CTA + health badge) |
-   | `VITE_WAR_COUNCIL_URL` | Live Command Center link |
-   | `VITE_*_REPO_URL` | GitHub fallbacks when live URLs are empty |
+Preview branches use `versions upload` — same build, preview URL only, production untouched.
 
-When live URLs are unset, CTAs fall back to GitHub repos — scroll tours still work from bundled screenshots.
+Optional env vars:
 
-### Manual deploy (Wrangler)
+| Variable | Purpose |
+|----------|---------|
+| `VITE_MILKMAN_APP_URL` | Live audiobook app link |
+| `VITE_WAR_COUNCIL_URL` | Live Command Center link |
+
+### Manual deploy (Wrangler CLI)
 
 ```powershell
 npm run pages:deploy
 ```
 
-Requires `npx wrangler login` once.
+Uses legacy `wrangler pages deploy dist`.
+
+## Cloudflare Pages (legacy Git-only UI)
 
 ## Project structure
 
@@ -79,7 +80,7 @@ public/
   showcase/wc/         # Vendored web component scripts (synced at build)
   showcase/screenshots/
   _redirects           # SPA fallback for Cloudflare
-wrangler.toml          # Pages output dir
+wrangler.toml          # Workers static assets config
 ```
 
 ## Cursor workspace
