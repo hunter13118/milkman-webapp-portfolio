@@ -356,8 +356,9 @@ main {
 
 .showcase-view-toggle {
   position: absolute;
-  top: 0.65rem;
+  bottom: 0.65rem;
   right: 0.65rem;
+  top: auto;
   z-index: 20;
   display: inline-flex;
   gap: 0;

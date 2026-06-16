@@ -27,5 +27,6 @@ export const testimonials = [
     company: 'Edward Jones — FA Suite',
     quote:
       'After handoff, Hunter became the primary POC for our Selenium/Serenity automation repository — extending coverage, improving testability in app code, and hitting SOW automation goals.',
+    highlight: 'POC for Selenium/Serenity',
   },
 ];
