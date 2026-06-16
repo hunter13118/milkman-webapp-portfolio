@@ -1,0 +1,23 @@
+{
+  "name": "milkman-webapp-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Engineer portfolio — AI-era narrative with embedded project showcases (Cloudflare Pages)",
+  "scripts": {
+    "dev": "vite",
+    "sync:showcase": "node scripts/sync-showcase-assets.mjs",
+    "build": "node scripts/sync-showcase-assets.mjs && vite build",
+    "preview": "vite preview",
+    "pages:deploy": "npm run build && npx wrangler pages deploy dist --project-name=milkman-webapp-portfolio",
+    "dev:stack": "powershell -ExecutionPolicy Bypass -File \"D:/war-council/scripts/start-workspace-dev.ps1\" -Profile portfolio-war-council"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.2",
+    "vite": "^6.3.5"
+  }
+}

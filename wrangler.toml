@@ -1,0 +1,8 @@
+name = "milkman-webapp-portfolio"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+[vars]
+# Override in Cloudflare dashboard → Pages → Settings → Environment variables
+# VITE_MILKMAN_APP_URL = ""
+# VITE_WAR_COUNCIL_URL = ""
