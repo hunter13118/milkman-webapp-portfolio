@@ -79,8 +79,7 @@ src/
 public/
   showcase/wc/         # Vendored web component scripts (synced at build)
   showcase/screenshots/
-  _redirects           # SPA fallback for Cloudflare
-wrangler.toml          # Workers static assets config
+wrangler.toml          # Workers static assets + SPA routing
 ```
 
 ## Cursor workspace
