@@ -7,9 +7,19 @@
   "scripts": {
     "dev": "vite",
     "sync:showcase": "node scripts/sync-showcase-assets.mjs",
-    "build": "node scripts/sync-showcase-assets.mjs && vite build",
+    "integrate:cloudpilot": "node scripts/integrate-cloudpilot.mjs",
+    "build": "node scripts/sync-showcase-assets.mjs && node scripts/integrate-cloudpilot.mjs && node scripts/integrate-spa-projects.mjs && vite build",
     "preview": "vite preview",
     "pages:deploy": "npm run build && npx wrangler pages deploy dist --project-name=milkman-webapp-portfolio",
+    "cf:login": "wrangler login",
+    "cf:secrets": "powershell -ExecutionPolicy Bypass -File scripts/setup-cloudflare-secrets.ps1",
+    "cf:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-cloudflare-secrets.ps1",
+    "cf:deploy": "npm run build && wrangler deploy",
+    "cf:verify": "wrangler whoami && wrangler secret list",
+    "cf:check": "wrangler deploy --dry-run",
+    "cf:sync-keys": "node scripts/sync-secrets-from-war-council.mjs",
+    "cf:sync-keys:cloud": "node scripts/sync-secrets-from-war-council.mjs --cloud",
+    "cf:configure-clerk": "node scripts/configure-clerk.mjs",
     "dev:stack": "powershell -ExecutionPolicy Bypass -File \"D:/war-council/scripts/start-workspace-dev.ps1\" -Profile portfolio-war-council"
   },
   "dependencies": {

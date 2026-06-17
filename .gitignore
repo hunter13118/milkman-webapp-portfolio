@@ -4,8 +4,11 @@ dist/
 *.log
 .env
 .env.local
+.dev.vars
 .cline-context/
 .cursor/
 decisions.jsonl
 public/audit/
+public/projects/cloudpilot/
+worker/cloudpilot/
 .wrangler/

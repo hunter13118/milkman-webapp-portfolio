@@ -10,6 +10,13 @@ export const siteUrls = {
   milkmanRepo: trim(import.meta.env.VITE_MILKMAN_REPO_URL) || 'https://github.com/hunter13118/milkman-audiobook-maker',
   warCouncilRepo: trim(import.meta.env.VITE_WAR_COUNCIL_REPO_URL) || 'https://github.com/hunter13118/war-council',
   copilotTtsRepo: trim(import.meta.env.VITE_COPILOT_TTS_REPO_URL) || 'https://github.com/hunter13118/copilot-tts',
+  cloudPilotRepo: trim(import.meta.env.VITE_CLOUDPILOT_REPO_URL) || 'https://github.com/hunter13118/cloudpilot',
+  cloudPilotApp: '/projects/cloudpilot/',
+  contextFabricApp: '/projects/context-fabric/',
+  ebookAvPlayerApp: '/projects/ebookavplayer/',
+  gyokanApp: '/projects/gyokan/',
+  gradeTheGraderApp: '/projects/grade-the-grader/',
+  specterboardApp: '/projects/specterboard/',
 };
 
 /** Prefer live app URL, then GitHub repo. */

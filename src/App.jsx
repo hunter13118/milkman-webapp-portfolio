@@ -78,6 +78,7 @@ function AiPhilosophy() {
 function ProjectCard({ project }) {
   const isExternal =
     project.showcasePath?.startsWith('http') && !project.showcaseComponent;
+  const isInternalApp = project.showcasePath?.startsWith('/') && !project.showcaseComponent;
   const hasLiveShowcase = Boolean(project.showcaseComponent);
   return (
     <article
@@ -111,6 +112,18 @@ function ProjectCard({ project }) {
             >
               {project.liveLabel}
             </a>
+          </div>
+        )}
+        {isInternalApp && (
+          <div className="project-actions">
+            <a href={project.showcasePath} className="btn btn-primary">
+              {project.liveLabel}
+            </a>
+            {project.repoPath ? (
+              <a href={project.repoPath} className="btn btn-ghost" target="_blank" rel="noreferrer">
+                GitHub
+              </a>
+            ) : null}
           </div>
         )}
       </div>

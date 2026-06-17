@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA fallback: route all sub-paths to the app shell so client
+# routing works under the project base path.
+/projects/contextfabric/*  /projects/contextfabric/index.html  200
+/*                          /index.html                          200

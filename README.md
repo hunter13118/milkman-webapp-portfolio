@@ -6,6 +6,7 @@ Engineer portfolio for the **AI-era job security** narrative — resume sections
 |---------|----------|-------------------|
 | MilkMan Audiobook Generator | In-page scroll/card embed | `VITE_MILKMAN_APP_URL` |
 | War Council | In-page scroll/card embed | `VITE_WAR_COUNCIL_URL` |
+| CloudPilot | `/projects/cloudpilot/` (Clerk-gated) | built into portfolio deploy |
 | Copilot TTS | GitHub link | repo URL in env |
 
 ## Local dev
@@ -57,14 +58,38 @@ Optional env vars:
 |----------|---------|
 | `VITE_MILKMAN_APP_URL` | Live audiobook app link |
 | `VITE_WAR_COUNCIL_URL` | Live Command Center link |
+| `VITE_CLERK_PUBLISHABLE_KEY` | CloudPilot Clerk key (baked in at build) |
 
-### Manual deploy (Wrangler CLI)
+Worker **secrets** (dashboard, not build): `GEMINI_API_KEY`, `CLERK_JWKS_URL`, optional `CLERK_ISSUER` — see `D:/CloudPilot/docs/CLERK_SETUP.md`.
+
+### Manual deploy (Wrangler CLI — source of truth)
+
+One-shot setup (login → Clerk secrets → build → deploy):
+
+```powershell
+cd D:\milkman-portfolio
+npm run cf:setup
+```
+
+Or step-by-step after `npm run cf:login`:
+
+```powershell
+npm run cf:secrets   # upload CLERK_JWKS_URL + CLERK_ISSUER (GEMINI optional)
+npm run cf:deploy    # build + wrangler deploy
+npm run cf:verify    # whoami + secret list
+```
+
+Validate config locally without Cloudflare auth:
+
+```powershell
+npx wrangler deploy --dry-run
+```
+
+Legacy Pages deploy (deprecated — no Worker API routes):
 
 ```powershell
 npm run pages:deploy
 ```
-
-Uses legacy `wrangler pages deploy dist`.
 
 ## Cloudflare Pages (legacy Git-only UI)
 

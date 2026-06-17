@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/projects/gyokan/sw.js', { scope: '/projects/gyokan/' })})}
