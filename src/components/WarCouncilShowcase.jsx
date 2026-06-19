@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { projectHref, siteUrls } from '../config/site.js';
 import { useShowcaseMode } from '../hooks/useShowcaseMode.js';
 import ShowcaseViewToggle from './ShowcaseViewToggle.jsx';
+import ShowcaseWebComponent from './ShowcaseWebComponent.jsx';
 
 /** War Council scroll/card embed. */
 export default function WarCouncilShowcase() {
@@ -37,10 +38,17 @@ export default function WarCouncilShowcase() {
       <ShowcaseViewToggle mode={mode} onModeChange={setManualMode} />
       {!scriptsReady && <p className="showcase-loading">Loading showcase…</p>}
       {scriptsReady && mode === 'card' && (
-        <war-council-showcase href={commandCenter} target="_blank" />
+        <ShowcaseWebComponent
+          tag="war-council-showcase"
+          attributes={{ href: commandCenter, target: '_blank' }}
+        />
       )}
       {scriptsReady && mode === 'scroll' && (
-        <war-council-showcase-scroll screenshots={screenshotBase} href={commandCenter} />
+        <ShowcaseWebComponent
+          tag="war-council-showcase-scroll"
+          attributes={{ screenshots: screenshotBase, href: commandCenter }}
+          fill
+        />
       )}
     </div>
   );

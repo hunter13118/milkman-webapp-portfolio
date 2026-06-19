@@ -38,6 +38,44 @@ function copyDir(src, dest) {
   }
 }
 
+const TEMPLATE_FILES = [
+  "ErrorBoundary.jsx",
+  "portfolioAuth.jsx",
+  "portfolioClerk.jsx",
+  "geminiCapability.js",
+  "GeminiKeyModal.jsx",
+];
+
+function syncPortfolioTemplates(appRoot) {
+  const libDir = path.join(appRoot, "src", "lib");
+  fs.mkdirSync(libDir, { recursive: true });
+  for (const file of TEMPLATE_FILES) {
+    const from = path.join(__dirname, "templates", file);
+    if (!fs.existsSync(from)) continue;
+    fs.copyFileSync(from, path.join(libDir, file));
+  }
+}
+
+/** PWAs register SW scoped to /projects/<slug>/ — stale SWs cause blank screens on iOS. */
+function stripEmbeddedPwa(distDir) {
+  const indexPath = path.join(distDir, "index.html");
+  if (fs.existsSync(indexPath)) {
+    let html = fs.readFileSync(indexPath, "utf8");
+    html = html.replace(/<script[^>]*registerSW\.js[^>]*><\/script>/gi, "");
+    html = html.replace(/<link[^>]*manifest\.webmanifest[^>]*>/gi, "");
+    fs.writeFileSync(indexPath, html);
+  }
+  for (const name of ["registerSW.js", "sw.js"]) {
+    const p = path.join(distDir, name);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+  for (const entry of fs.readdirSync(distDir, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.startsWith("workbox-")) {
+      fs.unlinkSync(path.join(distDir, entry.name));
+    }
+  }
+}
+
 loadEnvFile(path.join(portfolioRoot, ".env"));
 const clerkKey =
   process.env.VITE_CLERK_PUBLISHABLE_KEY || CLERK_PUBLISHABLE_FALLBACK;
@@ -68,6 +106,8 @@ for (const project of SPA_PROJECTS) {
   const basePath = projectBasePath(project.slug);
   console.log(`\nIntegrate ${project.slug} → ${basePath}`);
 
+  if (project.clerk) syncPortfolioTemplates(appRoot);
+
   const buildEnv = {
     ...process.env,
     VITE_BASE_PATH: basePath,
@@ -88,6 +128,7 @@ for (const project of SPA_PROJECTS) {
   }
 
   const distSrc = path.join(appRoot, "dist");
+  stripEmbeddedPwa(distSrc);
   const distDest = path.join(portfolioRoot, "public/projects", project.slug);
   rmrf(distDest);
   copyDir(distSrc, distDest);

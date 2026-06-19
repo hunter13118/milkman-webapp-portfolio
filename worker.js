@@ -20,8 +20,28 @@ const ROUTES = [
   ]},
 ];
 
+/** Canonical host + HTTPS — fixes mobile bookmarks to www and plain http. */
+function canonicalRedirect(request) {
+  const url = new URL(request.url);
+  const host = url.hostname.toLowerCase();
+  const proto = request.headers.get("X-Forwarded-Proto") || url.protocol.replace(":", "");
+
+  if (host === "www.hunterthemilkman.com") {
+    url.hostname = "hunterthemilkman.com";
+    return Response.redirect(url.toString(), 301);
+  }
+  if (proto === "http") {
+    url.protocol = "https:";
+    return Response.redirect(url.toString(), 301);
+  }
+  return null;
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const canon = canonicalRedirect(request);
+    if (canon) return canon;
+
     const url = new URL(request.url);
     const { pathname } = url;
 
@@ -35,6 +55,26 @@ export default {
       }
     }
 
-    return env.ASSETS.fetch(request);
+    // Portfolio SPA catalog — not an embedded app under /projects/<slug>/
+    const isProjectsCatalog =
+      pathname === "/projects" || pathname === "/projects/";
+    if (isProjectsCatalog && request.method === "GET") {
+      const spaUrl = new URL(request.url);
+      spaUrl.pathname = "/index.html";
+      request = new Request(spaUrl.toString(), request);
+    }
+
+    const response = await env.ASSETS.fetch(request);
+    const isHtml =
+      pathname.endsWith(".html") ||
+      pathname.endsWith("/") ||
+      (!pathname.includes(".") && request.method === "GET");
+    if (isHtml && response.ok) {
+      const headers = new Headers(response.headers);
+      headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      headers.set("Pragma", "no-cache");
+      return new Response(response.body, { status: response.status, headers });
+    }
+    return response;
   },
 };

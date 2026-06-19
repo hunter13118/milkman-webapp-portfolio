@@ -84,7 +84,7 @@ export const experience = [
   {
     role: 'Software Engineer',
     company: 'Abbott Laboratories — EnsiteX',
-    period: 'Mar 2020 — Jan 2021',
+    period: 'Mar 2019 — Jan 2021',
     bullets: [
       'Lead automation engineer: built Python automation framework for cardiac mapping software.',
       'Authored manual and automated test suites; worked with Azure infrastructure and SQL.',

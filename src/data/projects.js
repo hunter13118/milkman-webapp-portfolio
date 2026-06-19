@@ -143,6 +143,12 @@ export const projects = [
   },
 ];
 
+/** Homepage live embeds — everything else lives on /projects */
+export const FEATURED_PROJECT_IDS = ['milkman-audiobook', 'war-council'];
+
+export const featuredProjects = projects.filter((p) => FEATURED_PROJECT_IDS.includes(p.id));
+export const catalogProjects = projects.filter((p) => !FEATURED_PROJECT_IDS.includes(p.id));
+
 export const aiPrinciples = [
   {
     title: 'Orchestrate, don’t monologue',

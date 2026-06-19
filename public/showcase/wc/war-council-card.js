@@ -70,4 +70,6 @@ class WarCouncilShowcase extends HTMLElement {
   }
 }
 
-customElements.define('war-council-showcase', WarCouncilShowcase);
+if (!customElements.get('war-council-showcase')) {
+  customElements.define('war-council-showcase', WarCouncilShowcase);
+}

@@ -13,6 +13,14 @@ function showcaseStaticPlugin() {
   return {
     name: 'milkman-showcase-proxy',
     configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const pathOnly = (req.url || '').split('?')[0];
+        if (pathOnly === '/projects' || pathOnly === '/projects/') {
+          req.url = '/';
+        }
+        next();
+      });
+
       server.middlewares.use('/showcase/wc', (req, res, next) => {
         const rel = (req.url || '/').split('?')[0].replace(/^\//, '');
         const file = path.join(showcaseDir, rel);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { projectHref, siteUrls } from '../config/site.js';
 import { useShowcaseMode } from '../hooks/useShowcaseMode.js';
 import ShowcaseViewToggle from './ShowcaseViewToggle.jsx';
+import ShowcaseWebComponent from './ShowcaseWebComponent.jsx';
 
 /**
  * MilkMan Audiobook Generator embed — scroll tour or preview card.
@@ -38,10 +39,17 @@ export default function MilkmanShowcase() {
       <ShowcaseViewToggle mode={mode} onModeChange={setManualMode} />
       {!scriptsReady && <p className="showcase-loading">Loading showcase…</p>}
       {scriptsReady && mode === 'card' && (
-        <voxnovel-showcase href={appHref} api={apiBase} target="_blank" rel="noreferrer" />
+        <ShowcaseWebComponent
+          tag="voxnovel-showcase"
+          attributes={{ href: appHref, api: apiBase, target: '_blank' }}
+        />
       )}
       {scriptsReady && mode === 'scroll' && (
-        <voxnovel-showcase-scroll screenshots={screenshotBase} href={appHref} />
+        <ShowcaseWebComponent
+          tag="voxnovel-showcase-scroll"
+          attributes={{ screenshots: screenshotBase, href: appHref }}
+          fill
+        />
       )}
     </div>
   );

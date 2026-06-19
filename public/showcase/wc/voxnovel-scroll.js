@@ -490,4 +490,6 @@ class VoxNovelShowcaseScroll extends HTMLElement {
   }
 }
 
-customElements.define('voxnovel-showcase-scroll', VoxNovelShowcaseScroll);
+if (!customElements.get('voxnovel-showcase-scroll')) {
+  customElements.define('voxnovel-showcase-scroll', VoxNovelShowcaseScroll);
+}

@@ -9,6 +9,27 @@ Engineer portfolio for the **AI-era job security** narrative — resume sections
 | CloudPilot | `/projects/cloudpilot/` (Clerk-gated) | built into portfolio deploy |
 | Copilot TTS | GitHub link | repo URL in env |
 
+## Auth boundary
+
+**`/` (this resume site) is always public** — no `ClerkProvider`, no sign-in gate. Clerk is the shared identity provider for embedded tools only:
+
+| Path | Auth |
+|------|------|
+| `/` | Public portfolio |
+| `/projects/cloudpilot/` | Clerk required |
+| `/projects/*/` | Clerk required (each sub-app embeds its own gate) |
+
+The publishable key in `wrangler.toml` is baked into **sub-app builds** at integrate time, not into the portfolio shell.
+
+## Mobile / iOS troubleshooting
+
+If the site works on desktop but **not on your phone**:
+
+1. **Use `https://hunterthemilkman.com` (no `www`)** — `www.hunterthemilkman.com` has no DNS record yet. iOS autofill often adds `www`, which fails with “server not found”.
+2. **Add a `www` CNAME in Cloudflare DNS** (optional): `www` → `hunterthemilkman.com`, proxied — the worker then redirects www → apex.
+3. **Enable “Always Use HTTPS”** in Cloudflare → SSL/TLS → Edge Certificates (worker also forces http → https).
+4. **`/projects/*` sign-in** uses redirect-based Clerk (not modal) for iOS Safari compatibility.
+
 ## Local dev
 
 ```powershell

@@ -459,4 +459,6 @@ class WarCouncilShowcaseScroll extends HTMLElement {
   }
 }
 
-customElements.define('war-council-showcase-scroll', WarCouncilShowcaseScroll);
+if (!customElements.get('war-council-showcase-scroll')) {
+  customElements.define('war-council-showcase-scroll', WarCouncilShowcaseScroll);
+}

@@ -80,7 +80,7 @@ async function ensurePortfolioJwtTemplate(secret) {
   if (existing) {
     await clerkFetch(secret, `/jwt_templates/${existing.id}`, {
       method: "PATCH",
-      body: { claims },
+      body: { name: "portfolio", claims },
     });
     console.log("Updated JWT template: portfolio");
     return;
@@ -92,15 +92,53 @@ async function ensurePortfolioJwtTemplate(secret) {
   console.log("Created JWT template: portfolio");
 }
 
-async function patchRedirectUrls(secret, urls) {
+async function patchInstanceOrigins(secret) {
+  const inst = await clerkFetch(secret, "/instance");
+  const origins = new Set(inst.allowed_origins || []);
+  origins.add("https://hunterthemilkman.com");
+  origins.add("https://milkman-webapp-portfolio.hunter13118.workers.dev");
+  origins.add("http://localhost:5173");
+  origins.add("http://localhost:5180");
+  origins.add("http://localhost:8787");
   await clerkFetch(secret, "/instance", {
     method: "PATCH",
     body: {
       home_url: "https://hunterthemilkman.com",
-      allowed_redirect_urls: urls,
+      allowed_origins: [...origins],
     },
   });
-  console.log(`Set ${urls.length} allowed redirect URLs on Clerk instance.`);
+  console.log(`Updated instance home_url + ${origins.size} allowed origin(s).`);
+}
+
+async function ensureRedirectUrls(secret, urls) {
+  const listed = await clerkFetch(secret, "/redirect_urls");
+  const rows = Array.isArray(listed) ? listed : listed.data || [];
+  const existing = new Set(rows.map((r) => r.url));
+  let created = 0;
+  for (const url of urls) {
+    if (existing.has(url)) continue;
+    await clerkFetch(secret, "/redirect_urls", { method: "POST", body: { url } });
+    existing.add(url);
+    created += 1;
+  }
+  console.log(`Redirect URLs: ${existing.size} total (${created} newly created).`);
+}
+
+async function patchRedirectUrls(secret, urls) {
+  // Legacy instance field (may be ignored on newer Clerk API — harmless if so)
+  try {
+    await clerkFetch(secret, "/instance", {
+      method: "PATCH",
+      body: {
+        home_url: "https://hunterthemilkman.com",
+        allowed_redirect_urls: urls,
+      },
+    });
+  } catch {
+    /* optional */
+  }
+  await ensureRedirectUrls(secret, urls.filter((u) => u.startsWith("https://")));
+  await patchInstanceOrigins(secret);
 }
 
 async function main() {
@@ -117,6 +155,9 @@ async function main() {
   await ensurePortfolioJwtTemplate(secret);
 
   console.log("\nDone. Trusted Gemini users: publicMetadata.role=operator OR tier in personal_friend|friend|admin|owner");
+  console.log(
+    "\n iOS Safari: add Clerk DNS CNAME (clerk.hunterthemilkman.com) in Cloudflare → Clerk Dashboard → DNS for first-party session cookies."
+  );
 }
 
 main().catch((e) => {
