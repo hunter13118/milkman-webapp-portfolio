@@ -30,6 +30,17 @@ export async function handleIngestMessage(message, env) {
     const author = parsed.author || "";
     dbg.log(PHASE.P1_PARSE, "epub parsed", { title, chars: parsed.body_text?.length || 0 });
 
+    await putBookIndex(env, book_id, {
+      book_id,
+      title,
+      author,
+      status: "processing",
+      stage: "parsing",
+      progress: 0.05,
+      job_id,
+      art_style,
+    });
+
     await updateIngest(env, job_id, { status: "analyzing", progress: 0.15, detail: "freemium extract", stage: "analyzing" });
     const { resolvedExtractProviders } = await import("../_shared/pipeline-registry.js");
     const extractChain = await resolvedExtractProviders(env);
@@ -49,16 +60,43 @@ export async function handleIngestMessage(message, env) {
     );
     dbg.log(PHASE.P2_EXTRACT, "done", { provider, model });
 
+    const wantArt = generate_art !== false && !dry_run;
+
     await env.VAE_PACKS.put(
       `books/${book_id}.analysis.json`,
       JSON.stringify(analysis, null, 2),
       { httpMetadata: { contentType: "application/json" } },
     );
 
-    let playback;
+    const { compilePlayback } = await import("../_shared/compile-playback.js");
+    let playback = compilePlayback(analysis, { art_style, narrator_gender });
+    playback.status = "ready";
+    playback.stage = wantArt ? "imaging" : "done";
+    playback.progress = wantArt ? 0.48 : 1;
+
+    await env.VAE_PACKS.put(
+      `books/${book_id}.json`,
+      JSON.stringify(playback, null, 2),
+      { httpMetadata: { contentType: "application/json" } },
+    );
+
+    const earlyLines = (playback.scenes || []).reduce((n, s) => n + (s.lines?.length || 0), 0);
+    await putBookIndex(env, book_id, {
+      book_id,
+      title: playback.title || title,
+      author: playback.author || author,
+      status: wantArt ? "processing" : "ready",
+      stage: wantArt ? "imaging" : "done",
+      progress: playback.progress,
+      scenes: playback.scenes?.length || 0,
+      lines: earlyLines,
+      art_style,
+      extract_provider: provider,
+      job_id,
+    });
+
     let imagingStats = null;
 
-    const wantArt = generate_art !== false && !dry_run;
     if (wantArt) {
       await updateIngest(env, job_id, { status: "imaging", progress: 0.55, detail: "freemium images", stage: "imaging" });
       dbg.log(PHASE.P3_IMAGES, "start", { art_style, chain: await (await import("../_shared/pipeline-registry.js")).resolvedFreemiumImageChain(env, "character") });
@@ -77,12 +115,13 @@ export async function handleIngestMessage(message, env) {
         },
       });
       playback = img.playback;
+      playback.status = "ready";
+      playback.stage = "done";
+      playback.progress = 1;
       imagingStats = img.stats;
       dbg.log(PHASE.P3_IMAGES, "done", imagingStats);
     } else {
       dbg.log(PHASE.P3_IMAGES, "skipped", { dry_run, generate_art });
-      const { compilePlayback } = await import("../_shared/compile-playback.js");
-      playback = compilePlayback(analysis, { art_style, narrator_gender });
     }
 
     await env.VAE_PACKS.put(

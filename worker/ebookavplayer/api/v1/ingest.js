@@ -1,4 +1,4 @@
-import { putJob, getJob, json } from "../../_shared/jobs-kv.js";
+import { putJob, putBookIndex, json } from "../../_shared/jobs-kv.js";
 
 function edgeIngestEnabled(env) {
   return Boolean(env.VAE_PACKS && env.VAE_JOBS && env.VAE_JOBS_QUEUE);
@@ -45,6 +45,17 @@ export async function onIngestPost({ request, env, ctx }) {
     art_style: artStyle,
   };
   await putJob(env, "ingest", jobId, job);
+
+  await putBookIndex(env, bookId, {
+    book_id: bookId,
+    title: name.replace(/\.epub$/i, ""),
+    author: "",
+    status: "processing",
+    stage: "queued",
+    progress: 0,
+    job_id: jobId,
+    art_style: artStyle,
+  });
 
   const msg = {
     kind: "ingest",
