@@ -25,10 +25,15 @@ export async function handleIngestMessage(message, env) {
     if (!obj) throw new Error("upload missing from R2");
 
     const bytes = await obj.arrayBuffer();
-    const parsed = extractEpubText(bytes);
+    const maxChars = parseInt(env.VAE_EPUB_MAX_CHARS || "800000", 10) || 800000;
+    const parsed = extractEpubText(bytes, { maxChars });
     const title = parsed.title || book_id;
     const author = parsed.author || "";
-    dbg.log(PHASE.P1_PARSE, "epub parsed", { title, chars: parsed.body_text?.length || 0 });
+    dbg.log(PHASE.P1_PARSE, "epub parsed", {
+      title,
+      chars: parsed.body_text?.length || 0,
+      spine_parts: parsed.spine_parts,
+    });
 
     await putBookIndex(env, book_id, {
       book_id,
@@ -167,6 +172,15 @@ export async function handleIngestMessage(message, env) {
       stage: "error",
       detail: String(e.message || e).slice(0, 300),
     });
+    await putBookIndex(env, book_id, {
+      book_id,
+      title: book_id,
+      status: "error",
+      stage: "error",
+      progress: 0,
+      job_id,
+      error: String(e.message || e).slice(0, 200),
+    }).catch(() => {});
     message.retry();
   }
 }

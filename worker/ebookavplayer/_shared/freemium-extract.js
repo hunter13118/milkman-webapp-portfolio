@@ -183,7 +183,11 @@ export async function freemiumExtract(userText, { systemPrompt, preferProvider, 
       failures.push(e);
     }
   }
-  throw new Error(`freemium_extract: all providers failed (${failures.length})`);
+  throw new Error(
+    `freemium_extract: all providers failed (${failures.length}) — ${
+      failures.slice(0, 3).map((e) => e.message || e).join(" | ")
+    }`,
+  );
 }
 
 export function chunkText(text, maxTokens = MAX_CHUNK_TOKENS) {

@@ -1,4 +1,4 @@
-import { proxyToOrigin } from "../../_shared/proxy-fetch.js";
+import { proxyToOrigin, originBase } from "../../_shared/proxy-fetch.js";
 import { packDownloadResponse, tryPackFromR2 } from "../../_shared/r2-packs.js";
 
 const API_PREFIX = "/projects/ebookavplayer/api";
@@ -18,6 +18,43 @@ export async function onPackBuildFileGet({ request, env, bookId, jobId }) {
   const hit = await tryPackFromR2(env, { jobId });
   if (hit) {
     return packDownloadResponse(hit.obj, `${bookId}.vaepack`);
+  }
+
+  if (env.VAE_JOBS) {
+    const raw = await env.VAE_JOBS.get(`job:${jobId}`);
+    if (raw) {
+      const st = JSON.parse(raw);
+      if (st.book_id && st.book_id !== bookId) {
+        return Response.json({ error: "job book mismatch" }, { status: 404 });
+      }
+      if (st.r2_key) {
+        const obj = await env.VAE_PACKS?.get(st.r2_key);
+        if (obj) return packDownloadResponse(obj, `${bookId}.vaepack`);
+      }
+      if (st.status !== "done") {
+        return Response.json(
+          {
+            error: "pack not ready",
+            status: st.status,
+            progress: st.progress ?? 0,
+            detail: st.detail || "",
+            ready: false,
+          },
+          { status: 409 },
+        );
+      }
+      return Response.json(
+        { error: "pack file missing in storage", job_id: jobId, detail: st.detail || "" },
+        { status: 404 },
+      );
+    }
+  }
+
+  if (!originBase(env)) {
+    return Response.json(
+      { error: "pack not found — start a build and wait until ready=true", job_id: jobId },
+      { status: 404 },
+    );
   }
   const url = new URL(request.url);
   return proxyToOrigin(

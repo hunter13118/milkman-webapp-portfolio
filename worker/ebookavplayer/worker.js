@@ -46,7 +46,7 @@ export async function handleEbookavplayerApi(request, env, ctx) {
   }
 
   const buildFile = path.match(/^\/books\/([^/]+)\/pack\/build\/([^/]+)\/file$/);
-  if (method === "GET" && buildFile) {
+  if ((method === "GET" || method === "HEAD") && buildFile) {
     return onPackBuildFileGet({
       request, env, bookId: buildFile[1], jobId: buildFile[2],
     });
