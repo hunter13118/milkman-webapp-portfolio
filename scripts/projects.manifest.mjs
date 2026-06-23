@@ -2,8 +2,7 @@
  * Portfolio sub-apps embedded at https://hunterthemilkman.com/projects/<slug>/
  * CloudPilot is integrated separately (Worker API routes + edge handlers).
  */
-export const CLERK_PUBLISHABLE_FALLBACK =
-  "pk_test_YnVyc3RpbmctdGFycG9uLTY1LmNsZXJrLmFjY291bnRzLmRldCQ";
+export { CLERK_PUBLISHABLE_FALLBACK } from "./clerk-key.mjs";
 
 /** @typedef {{ slug: string, name: string, repo: string, root: string, appDir: string, buildCmd?: string, clerk?: boolean, hero?: string }} SpaProject */
 

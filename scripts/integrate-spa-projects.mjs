@@ -3,10 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import {
-  CLERK_PUBLISHABLE_FALLBACK,
   SPA_PROJECTS,
   projectBasePath,
 } from "./projects.manifest.mjs";
+import { resolveClerkPublishableKey } from "./clerk-key.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const portfolioRoot = path.resolve(__dirname, "..");
@@ -77,8 +77,7 @@ function stripEmbeddedPwa(distDir) {
 }
 
 loadEnvFile(path.join(portfolioRoot, ".env"));
-const clerkKey =
-  process.env.VITE_CLERK_PUBLISHABLE_KEY || CLERK_PUBLISHABLE_FALLBACK;
+const clerkKey = resolveClerkPublishableKey();
 
 let integrated = 0;
 
@@ -113,6 +112,9 @@ for (const project of SPA_PROJECTS) {
     VITE_BASE_PATH: basePath,
     BASE_URL: basePath,
     ...(project.clerk ? { VITE_CLERK_PUBLISHABLE_KEY: clerkKey } : {}),
+    ...(project.slug === "ebookavplayer"
+      ? { VITE_API_BASE: `${basePath.replace(/\/$/, "")}/api` }
+      : {}),
   };
 
   const buildCmd = project.buildCmd || "npm run build";
