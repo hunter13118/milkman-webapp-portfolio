@@ -5,6 +5,8 @@ import {
 } from "./worker/cloudpilot/api/v1/architect/generate.js";
 import { onRequestPost as graderEvaluate } from "./worker/grade-the-grader/api/v1/evaluate.js";
 import { onRequestPost as specterSmackTalk } from "./worker/specterboard/api/v1/smack-talk.js";
+import { handleEbookavplayerApi } from "./worker/ebookavplayer/worker.js";
+import { onQueueBatch as vaeQueueDispatch } from "./worker/ebookavplayer/queue/dispatch.js";
 
 const ROUTES = [
   { prefix: "/projects/cloudpilot/api/v1", routes: [
@@ -45,6 +47,10 @@ export default {
     const url = new URL(request.url);
     const { pathname } = url;
 
+    if (pathname.startsWith("/projects/ebookavplayer/api")) {
+      return handleEbookavplayerApi(request, env, ctx);
+    }
+
     for (const group of ROUTES) {
       if (!pathname.startsWith(group.prefix)) continue;
       const sub = pathname.slice(group.prefix.length);
@@ -76,5 +82,8 @@ export default {
       return new Response(response.body, { status: response.status, headers });
     }
     return response;
+  },
+  async queue(batch, env, ctx) {
+    return vaeQueueDispatch(batch, env);
   },
 };

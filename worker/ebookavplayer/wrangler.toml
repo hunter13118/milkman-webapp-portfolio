@@ -1,0 +1,32 @@
+name = "vae-edge"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Standalone dev deploy for the VAE edge layer.
+# Production: handlers are copied into milkman-webapp-portfolio at build time.
+
+[vars]
+# VAE_API_ORIGIN = "https://vae-api.example.com"
+
+# Encrypted: wrangler secret put VAE_API_ORIGIN QUEUE_WEBHOOK_SECRET
+
+[[r2_buckets]]
+binding = "VAE_PACKS"
+bucket_name = "vae-packs"
+
+[[kv_namespaces]]
+binding = "VAE_JOBS"
+id = "00000000000000000000000000000000"  # replace after: wrangler kv namespace create VAE_JOBS
+
+[[queues.producers]]
+binding = "VAE_JOBS_QUEUE"
+queue = "vae-jobs"
+
+[[queues.producers]]
+binding = "VAE_PACK_QUEUE"
+queue = "vae-jobs"
+
+[[queues.consumers]]
+queue = "vae-jobs"
+max_batch_size = 1
+max_batch_timeout = 30

@@ -1,6 +1,7 @@
 name = "milkman-webapp-portfolio"
 main = "worker.js"
 compatibility_date = "2024-09-23"
+account_id = "c41c7b1bb8131ac32f61a61253b928bd"
 keep_vars = true
 
 # Workers static assets (used by `npx wrangler deploy` in Cloudflare Builds)
@@ -12,7 +13,37 @@ not_found_handling = "single-page-application"
 # Runtime plain vars (publishable key is safe in client bundle — also used as build fallback)
 [vars]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_YnVyc3RpbmctdGFycG9uLTY1LmNsZXJrLmFjY291bnRzLmRldiQ"
+EXTRACT_SKIP_GEMINI = "true"
+VAE_DEBUG = "true"
 
 # Encrypted via: wrangler secret put CLERK_JWKS_URL / CLERK_ISSUER / GEMINI_API_KEY
+# VAE_API_ORIGIN = "https://your-vae-api.example.com"
+# QUEUE_WEBHOOK_SECRET = shared with FastAPI .env
 # VITE_MILKMAN_APP_URL = ""
 # VITE_WAR_COUNCIL_URL = ""
+
+# R2 object storage (S3 API endpoint for FastAPI mirror — not a Worker binding):
+# https://c41c7b1bb8131ac32f61a61253b928bd.r2.cloudflarestorage.com
+[[r2_buckets]]
+binding = "VAE_PACKS"
+bucket_name = "vae-packs"
+
+[[kv_namespaces]]
+binding = "VAE_JOBS"
+# Create: wrangler kv namespace create VAE_JOBS — paste id below
+id = "77fbb19de2414b7ca3aa3408782b36a8"
+
+[[queues.producers]]
+binding = "VAE_JOBS_QUEUE"
+queue = "vae-jobs"
+
+[[queues.producers]]
+binding = "VAE_PACK_QUEUE"
+queue = "vae-jobs"
+
+[[queues.consumers]]
+queue = "vae-jobs"
+max_batch_size = 1
+max_batch_timeout = 30
+
+# Legacy name — same queue (pack-build messages use kind: "pack-build")

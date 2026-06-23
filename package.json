@@ -8,10 +8,11 @@
     "dev": "vite",
     "sync:showcase": "node scripts/sync-showcase-assets.mjs",
     "integrate:cloudpilot": "node scripts/integrate-cloudpilot.mjs",
-    "build": "node scripts/sync-showcase-assets.mjs && node scripts/integrate-cloudpilot.mjs && node scripts/integrate-spa-projects.mjs && vite build",
+    "build": "node scripts/sync-showcase-assets.mjs && node scripts/integrate-cloudpilot.mjs && node scripts/integrate-ebookavplayer.mjs && node scripts/integrate-spa-projects.mjs && vite build",
     "preview": "vite preview",
     "pages:deploy": "npm run build && npx wrangler pages deploy dist --project-name=milkman-webapp-portfolio",
-    "cf:login": "wrangler login",
+    "cf:setup-vae": "node scripts/setup-vae-edge.mjs",
+    "cf:deploy-vae": "node scripts/setup-vae-edge.mjs --deploy",
     "cf:secrets": "powershell -ExecutionPolicy Bypass -File scripts/setup-cloudflare-secrets.ps1",
     "cf:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-cloudflare-secrets.ps1",
     "cf:deploy": "npm run build && wrangler deploy",
@@ -23,6 +24,7 @@
     "dev:stack": "powershell -ExecutionPolicy Bypass -File \"D:/war-council/scripts/start-workspace-dev.ps1\" -Profile portfolio-war-council"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.0"
