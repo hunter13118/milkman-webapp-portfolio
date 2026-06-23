@@ -1,4 +1,4 @@
-import { putJob, putBookIndex, json } from "../../_shared/jobs-kv.js";
+import { putJob, getJob, putBookIndex, json } from "../../_shared/jobs-kv.js";
 
 function edgeIngestEnabled(env) {
   return Boolean(env.VAE_PACKS && env.VAE_JOBS && env.VAE_JOBS_QUEUE);
