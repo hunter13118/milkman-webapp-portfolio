@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { CLERK_PUBLISHABLE_FALLBACK } from "./projects.manifest.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const portfolioRoot = path.resolve(__dirname, "..");
@@ -24,8 +25,7 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(portfolioRoot, ".env"));
 
 const clerkPublishableKey =
-  process.env.VITE_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_YnVyc3RpbmctdGFycG9uLTY1LmNsZXJrLmFjY291bnRzLmRdiQ";
+  process.env.VITE_CLERK_PUBLISHABLE_KEY || CLERK_PUBLISHABLE_FALLBACK;
 
 function rmrf(dir) {
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });

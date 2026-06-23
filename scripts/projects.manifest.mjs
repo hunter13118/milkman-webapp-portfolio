@@ -3,7 +3,7 @@
  * CloudPilot is integrated separately (Worker API routes + edge handlers).
  */
 export const CLERK_PUBLISHABLE_FALLBACK =
-  "pk_test_YnVyc3RpbmctdGFycG9uLTY1LmNsZXJrLmFjY291bnRzLmRdiQ";
+  "pk_test_YnVyc3RpbmctdGFycG9uLTY1LmNsZXJrLmFjY291bnRzLmRldCQ";
 
 /** @typedef {{ slug: string, name: string, repo: string, root: string, appDir: string, buildCmd?: string, clerk?: boolean, hero?: string }} SpaProject */
 
@@ -21,7 +21,7 @@ export const SPA_PROJECTS = [
     slug: "ebookavplayer",
     name: "Ebook AV Player",
     repo: "ebookavplayer",
-    root: "../EbookAVPlayer",
+    root: "../ebookavplayer",
     appDir: "web",
     clerk: true,
   },
