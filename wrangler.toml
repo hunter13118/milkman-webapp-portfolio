@@ -48,3 +48,13 @@ max_batch_size = 1
 max_batch_timeout = 30
 
 # Legacy name — same queue (pack-build messages use kind: "pack-build")
+
+[[durable_objects.bindings]]
+name = "JOB_EVENTS"
+class_name = "JobEventHub"
+
+# Already deployed as of this Worker's prior history — declared here for
+# clarity, not to create it fresh (see the "already exists" check on deploy).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["JobEventHub"]

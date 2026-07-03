@@ -8,6 +8,10 @@ import { onRequestPost as specterSmackTalk } from "./worker/specterboard/api/v1/
 import { handleEbookavplayerApi } from "./worker/ebookavplayer/worker.js";
 import { onQueueBatch as vaeQueueDispatch } from "./worker/ebookavplayer/queue/dispatch.js";
 
+// Durable Object classes must be exported from the actual entrypoint
+// (wrangler.toml's `main`), not just from the imported subtree.
+export { JobEventHub } from "./worker/ebookavplayer/durable-objects/job-event-hub.js";
+
 const ROUTES = [
   { prefix: "/projects/cloudpilot/api/v1", routes: [
     { path: "/health", method: "GET", handler: healthGet },
