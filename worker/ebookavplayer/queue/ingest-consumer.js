@@ -1,175 +1,112 @@
-import { extractEpubText } from "../_shared/epub-text.js";
-import { freemiumExtractBook } from "../_shared/freemium-extract.js";
-import { runEdgeImaging } from "../_shared/edge-imaging.js";
 import { putBookIndex } from "../_shared/jobs-kv.js";
+import { touchIngestJob } from "../_shared/job-touch.js";
 import { createPhaseLogger, PHASE } from "../_shared/phase-debug.js";
+import { createIngestProgress } from "../_shared/ingest-progress.js";
+import { runCheckpointedExtraction } from "../_shared/chapter-extract-pipeline.js";
 
-async function updateIngest(env, jobId, patch) {
-  const key = `ingest:${jobId}`;
-  const prev = await env.VAE_JOBS.get(key);
-  const base = prev ? JSON.parse(prev) : {};
-  const next = { ...base, ...patch };
-  await env.VAE_JOBS.put(key, JSON.stringify(next), { expirationTtl: 86400 * 7 });
-  return next;
+async function touchBookProgress(env, bookId, patch) {
+  await putBookIndex(env, bookId, patch);
 }
 
 export async function handleIngestMessage(message, env) {
-  const { job_id, book_id, art_style, narrator_gender, dry_run, generate_art } = message.body;
+  const {
+    job_id, book_id, art_style, narrator_gender, dry_run, generate_art, byo_mode, illustration_mode,
+    prefer_provider,
+  } = message.body;
   const dbg = createPhaseLogger(env, "ingest", job_id);
+  const wantArt = generate_art !== false && !dry_run && !byo_mode;
+  const tracker = createIngestProgress({ wantArt });
+  let lastReportFlush = 0;
+  let lastReportPhase = "";
+
+  async function report(phase, t, meta = {}) {
+    const patch = tracker.at(phase, t, meta);
+    const detail = String(meta.detail || "");
+    const force = t === 0 || t === 1
+      || phase !== lastReportPhase
+      || /fail|error|complete|skipped|done/i.test(detail)
+      || /Trying |Waiting on /i.test(detail);
+    const now = Date.now();
+    if (!force && now - lastReportFlush < 800) return patch;
+    lastReportFlush = now;
+    lastReportPhase = phase;
+    await touchIngestJob(env, job_id, patch, { dbg });
+    await touchBookProgress(env, book_id, {
+      progress: patch.progress,
+      stage: patch.stage,
+      status: patch.status,
+      phase: patch.phase,
+      phase_label: patch.phase_label,
+      detail: patch.detail,
+      step: patch.step,
+      step_index: patch.step_index,
+      step_total: patch.step_total,
+      workers: patch.workers,
+      progress_meta: patch.progress_meta,
+    });
+    return patch;
+  }
 
   try {
-    dbg.log(PHASE.P1_PARSE, "start");
-    await updateIngest(env, job_id, { status: "parsing", progress: 0.05, detail: "loading epub", stage: "parsing" });
-
-    const obj = await env.VAE_PACKS.get(`uploads/${job_id}.epub`);
-    if (!obj) throw new Error("upload missing from R2");
-
-    const bytes = await obj.arrayBuffer();
-    const maxChars = parseInt(env.VAE_EPUB_MAX_CHARS || "800000", 10) || 800000;
-    const parsed = extractEpubText(bytes, { maxChars });
-    const title = parsed.title || book_id;
-    const author = parsed.author || "";
-    dbg.log(PHASE.P1_PARSE, "epub parsed", {
-      title,
-      chars: parsed.body_text?.length || 0,
-      spine_parts: parsed.spine_parts,
-    });
-
-    await putBookIndex(env, book_id, {
-      book_id,
-      title,
-      author,
-      status: "processing",
-      stage: "parsing",
-      progress: 0.05,
+    const result = await runCheckpointedExtraction({
+      env,
       job_id,
-      art_style,
-    });
-
-    await updateIngest(env, job_id, { status: "analyzing", progress: 0.15, detail: "freemium extract", stage: "analyzing" });
-    const { resolvedExtractProviders } = await import("../_shared/pipeline-registry.js");
-    const extractChain = await resolvedExtractProviders(env);
-    dbg.log(PHASE.P2_EXTRACT, "start", { chain: extractChain });
-
-    const { analysis, provider, model } = await freemiumExtractBook(
-      { book_id, title, author, body_text: parsed.body_text },
-      {
-        env,
-        onProgress: ({ chunk, total, provider: p }) => {
-          updateIngest(env, job_id, {
-            detail: `[P2] extract ${p || "…"} chunk ${chunk}/${total}`,
-            progress: 0.15 + (0.35 * chunk) / total,
-          }).catch(() => {});
-        },
-      },
-    );
-    dbg.log(PHASE.P2_EXTRACT, "done", { provider, model });
-
-    const wantArt = generate_art !== false && !dry_run;
-
-    await env.VAE_PACKS.put(
-      `books/${book_id}.analysis.json`,
-      JSON.stringify(analysis, null, 2),
-      { httpMetadata: { contentType: "application/json" } },
-    );
-
-    const { compilePlayback } = await import("../_shared/compile-playback.js");
-    let playback = compilePlayback(analysis, { art_style, narrator_gender });
-    playback.status = "ready";
-    playback.stage = wantArt ? "imaging" : "done";
-    playback.progress = wantArt ? 0.48 : 1;
-
-    await env.VAE_PACKS.put(
-      `books/${book_id}.json`,
-      JSON.stringify(playback, null, 2),
-      { httpMetadata: { contentType: "application/json" } },
-    );
-
-    const earlyLines = (playback.scenes || []).reduce((n, s) => n + (s.lines?.length || 0), 0);
-    await putBookIndex(env, book_id, {
       book_id,
-      title: playback.title || title,
-      author: playback.author || author,
-      status: wantArt ? "processing" : "ready",
-      stage: wantArt ? "imaging" : "done",
-      progress: playback.progress,
-      scenes: playback.scenes?.length || 0,
-      lines: earlyLines,
       art_style,
-      extract_provider: provider,
-      job_id,
+      narrator_gender,
+      illustration_mode,
+      dry_run,
+      generate_art,
+      byo_mode,
+      prefer_provider,
+      report,
+      dbg,
     });
 
-    let imagingStats = null;
+    const donePatch = tracker.at("done", 1, {
+      detail: result.status === "partial"
+        ? `Stalled at chapter ${result.checkpoint.next_chapter_idx}/${result.checkpoint.total_chapters}`
+        : "Ready",
+    });
+    await dbg.flush((patch) => touchIngestJob(env, job_id, patch, { eventType: "done", dbg }), {
+      ...donePatch,
+      book_id,
+      extract_provider: result.provider,
+      imaging: result.imagingStats || null,
+      status: result.status,
+    });
 
-    if (wantArt) {
-      await updateIngest(env, job_id, { status: "imaging", progress: 0.55, detail: "freemium images", stage: "imaging" });
-      dbg.log(PHASE.P3_IMAGES, "start", { art_style, chain: await (await import("../_shared/pipeline-registry.js")).resolvedFreemiumImageChain(env, "character") });
-      const img = await runEdgeImaging({
-        env,
-        book_id,
-        analysis,
-        art_style,
-        narrator_gender,
-        dbg,
-        onProgress: ({ kind, index, total, id }) => {
-          updateIngest(env, job_id, {
-            detail: `[P3] ${kind} ${index}/${total} ${id}`,
-            progress: 0.55 + (0.35 * index) / total,
-          }).catch(() => {});
-        },
+    // Re-assert the terminal book status last. A fire-and-forget progress
+    // report from the final chunk attempt can occasionally resolve after
+    // runCheckpointedExtraction's own status write (report() is called
+    // without awaiting inside onProgress, so its KV read-modify-write can
+    // land after the stall/ready write and clobber "partial" back to
+    // "processing"). This closes that race without needing to serialize
+    // every progress tick.
+    if (result.status === "partial") {
+      await putBookIndex(env, book_id, {
+        status: "partial",
+        chapters_ready: result.checkpoint.chapters_done.length,
+        total_chapters: result.checkpoint.total_chapters,
+        active_job_id: null,
+        imaging_locked: false,
       });
-      playback = img.playback;
-      playback.status = "ready";
-      playback.stage = "done";
-      playback.progress = 1;
-      imagingStats = img.stats;
-      dbg.log(PHASE.P3_IMAGES, "done", imagingStats);
-    } else {
-      dbg.log(PHASE.P3_IMAGES, "skipped", { dry_run, generate_art });
     }
 
-    await env.VAE_PACKS.put(
-      `books/${book_id}.json`,
-      JSON.stringify(playback, null, 2),
-      { httpMetadata: { contentType: "application/json" } },
-    );
-
-    const lines = (playback.scenes || []).reduce((n, s) => n + (s.lines?.length || 0), 0);
-    await putBookIndex(env, book_id, {
-      book_id,
-      title: playback.title,
-      author: playback.author,
-      status: "ready",
-      stage: "done",
-      progress: 1,
-      scenes: playback.scenes.length,
-      lines,
-      art_style,
-      extract_provider: provider,
-    });
-
-    await dbg.flush((patch) => updateIngest(env, job_id, patch), {
-      status: "done",
-      progress: 1,
-      stage: "done",
-      book_id,
-      extract_provider: provider,
-      imaging: imagingStats,
-      detail: dry_run
-        ? `[P2] dry run (${provider})`
-        : wantArt
-          ? `[P2+P3] done extract=${provider} images ok=${imagingStats?.ok ?? 0} fail=${imagingStats?.fail ?? 0}`
-          : `[P2] extract=${provider} (images skipped)`,
-    });
+    // A "partial" result (a chapter's provider chain fully exhausted) is a
+    // deliberate stop, not a queue failure — ack so it doesn't retry-loop
+    // and burn through the same exhausted quota again. The user resumes via
+    // POST /books/:id/continue-extract whenever they choose.
     message.ack();
   } catch (e) {
     console.error("ingest consumer", job_id, e);
     dbg.log("ERROR", String(e.message || e).slice(0, 200));
-    await dbg.flush((patch) => updateIngest(env, job_id, patch), {
+    await dbg.flush((patch) => touchIngestJob(env, job_id, patch, { eventType: "error", dbg }), {
       status: "error",
       progress: 0,
       stage: "error",
+      phase: "error",
+      phase_label: "Failed",
       detail: String(e.message || e).slice(0, 300),
     });
     await putBookIndex(env, book_id, {
@@ -179,6 +116,8 @@ export async function handleIngestMessage(message, env) {
       stage: "error",
       progress: 0,
       job_id,
+      imaging_locked: false,
+      active_job_id: null,
       error: String(e.message || e).slice(0, 200),
     }).catch(() => {});
     message.retry();

@@ -1,0 +1,14 @@
+# Wrangler loads worker/.dev.vars for `npm run dev:worker`.
+# Keys are synced automatically from repo-root .env via: node scripts/sync-dev-vars.mjs
+# (runs before dev:worker). Edit .env, not this file.
+#
+# EXTRACT_SKIP_GEMINI: when false, Gemini is first in the extract chain.
+# sync-dev-vars sets false automatically when GEMINI_API_KEY is in .env.
+# Optional freemium / imaging keys (see repo .env.example)
+# CEREBRAS_API_KEY=
+# GROQ_API_KEY=
+# POLLINATIONS_TOKEN=
+# HF_TOKEN=
+
+# Extra CORS origins (comma-separated exact origins), e.g. cloudflared tunnel:
+# VAE_CORS_ORIGINS=https://abc123.trycloudflare.com

@@ -1,4 +1,5 @@
-import { publicView, saveConfig } from "../../_shared/pipeline-registry.js";
+import { publicView, saveConfig, getConfig } from "../../_shared/pipeline-registry.js";
+import { evaluateCostEfficiency, presetPipelinePatch } from "../../_shared/pipeline-cost-guide.js";
 import { json } from "../../_shared/jobs-kv.js";
 
 function pipelineEnabled(env) {
@@ -18,6 +19,11 @@ export async function onPipelinePatch({ request, env }) {
   } catch {
     return json({ error: "invalid json" }, 400);
   }
-  await saveConfig(env, body.lanes || body);
+  if (body.apply_cost_efficient) {
+    const cfg = await getConfig(env);
+    await saveConfig(env, presetPipelinePatch(cfg));
+  } else {
+    await saveConfig(env, body.lanes || body);
+  }
   return json(await publicView(env));
 }

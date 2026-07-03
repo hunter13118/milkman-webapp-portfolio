@@ -1,14 +1,27 @@
 name = "vae-edge"
 main = "worker.js"
 compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 # Standalone dev deploy for the VAE edge layer.
 # Production: handlers are copied into milkman-webapp-portfolio at build time.
+# Local bridge: npm run dev:worker  →  http://127.0.0.1:8600/projects/ebookavplayer/api
+
+[dev]
+port = 8600
+local_protocol = "http"
 
 [vars]
 # VAE_API_ORIGIN = "https://vae-api.example.com"
+# PUBLIC_MEDIA_ORIGIN = "https://hunterthemilkman.com/projects/ebookavplayer/api"
+#   Required for Pollinations image-to-image (must fetch /media/ refs over HTTPS).
+# VAE_EPUB_MAX_IMAGES = "0"  # 0 = unlimited EPUB plate extract; set N to cap.
+# ILLUSTRATION_MODE = "auto"  # auto | reference | moment | direct-use
+# POLLINATIONS_I2I_MODEL = "kontext"  # seedream, klein, nanobanana also support refs
+# VAE_CORS_ORIGINS = "https://my-tunnel.trycloudflare.com"
 
-# Encrypted: wrangler secret put VAE_API_ORIGIN QUEUE_WEBHOOK_SECRET
+# Encrypted: wrangler secret put GEMINI_API_KEY VAE_API_ORIGIN QUEUE_WEBHOOK_SECRET
+# Local secrets: copy worker/.dev.vars.example → worker/.dev.vars
 
 [[r2_buckets]]
 binding = "VAE_PACKS"
@@ -30,3 +43,11 @@ queue = "vae-jobs"
 queue = "vae-jobs"
 max_batch_size = 1
 max_batch_timeout = 30
+
+[[durable_objects.bindings]]
+name = "JOB_EVENTS"
+class_name = "JobEventHub"
+
+[[migrations]]
+tag = "v1-job-events"
+new_sqlite_classes = ["JobEventHub"]

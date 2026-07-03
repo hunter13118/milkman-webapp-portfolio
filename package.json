@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "fflate": "^0.8.2",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.0"

@@ -113,6 +113,67 @@ export async function onPackBuildPost({ request, env, bookId, body }) {
   });
 }
 
+/** POST cancel pack build — KV job update, origin fallback. */
+export async function onPackBuildCancelPost({ request, env, bookId, jobId }) {
+  if (env.VAE_JOBS) {
+    const key = `job:${jobId}`;
+    const raw = await env.VAE_JOBS.get(key);
+    if (raw) {
+      const st = JSON.parse(raw);
+      if (st.book_id && st.book_id !== bookId) {
+        return Response.json({ error: "job book mismatch" }, { status: 404 });
+      }
+      if (st.status === "done") {
+        return Response.json({ error: "job cannot be cancelled" }, { status: 409 });
+      }
+      if (st.status === "cancelled") {
+        return Response.json({ ...st, ready: false });
+      }
+      const updated = {
+        ...st,
+        status: "cancelled",
+        detail: "cancelled",
+        ready: false,
+        cancelled: true,
+      };
+      await env.VAE_JOBS.put(key, JSON.stringify(updated), { expirationTtl: 86400 });
+      return Response.json(updated);
+    }
+  }
+  if (!originBase(env)) {
+    return Response.json({ error: "no such pack job" }, { status: 404 });
+  }
+  const url = new URL(request.url);
+  return proxyToOrigin(
+    request,
+    env,
+    `/books/${encodeURIComponent(bookId)}/pack/build/${encodeURIComponent(jobId)}/cancel${url.search}`,
+  );
+}
+
+/** GET external audio manifest — R2 when present, stub on edge-only. */
+export async function onAudioManifestGet({ request, env, bookId }) {
+  if (env.VAE_PACKS) {
+    const manifestObj = await env.VAE_PACKS.get(`books/${bookId}/audio/manifest.json`);
+    if (manifestObj) {
+      const pack = JSON.parse(await manifestObj.text());
+      return Response.json({ book_id: bookId, available: true, ...pack });
+    }
+    const bookObj = await env.VAE_PACKS.get(`books/${bookId}.json`);
+    if (bookObj) {
+      return Response.json({ book_id: bookId, available: false, line_count: 0 });
+    }
+  }
+  if (originBase(env)) {
+    return proxyToOrigin(
+      request,
+      env,
+      `/books/${encodeURIComponent(bookId)}/audio/manifest`,
+    );
+  }
+  return Response.json({ book_id: bookId, available: false, line_count: 0 });
+}
+
 /** Poll job status — KV first (edge pack build), origin fallback. */
 export async function onPackBuildStatusGet({ request, env, bookId, jobId }) {
   if (env.VAE_JOBS) {

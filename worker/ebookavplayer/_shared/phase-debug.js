@@ -3,10 +3,12 @@
 export const PHASE = {
   P1_PARSE: "P1_PARSE",
   P2_EXTRACT: "P2_EXTRACT",
+  P2_REPAIR: "P2_REPAIR",
+  P2_ATTRIBUTE: "P2_ATTRIBUTE",
+  P2_COMPILE: "P2_COMPILE",
   P3_IMAGES: "P3_IMAGES",
   P4_PACK: "P4_PACK",
 };
-
 const MAX_LOG = 80;
 
 export function debugEnabled(env) {
@@ -14,7 +16,7 @@ export function debugEnabled(env) {
 }
 
 /** @returns {{ log(phase, msg, data?), flush(patch?) }} */
-export function createPhaseLogger(env, scope, jobId) {
+export function createPhaseLogger(env, scope, jobId, { onEntry } = {}) {
   const entries = [];
   const prefix = `[VAE:${scope}] job=${jobId}`;
 
@@ -30,6 +32,9 @@ export function createPhaseLogger(env, scope, jobId) {
       const extra = data ? ` ${JSON.stringify(data).slice(0, 400)}` : "";
       console.log(`${prefix} ${phase} ${msg}${extra}`);
     }
+    try {
+      onEntry?.(row);
+    } catch { /* non-fatal */ }
   }
 
   async function flush(updateFn, patch = {}) {

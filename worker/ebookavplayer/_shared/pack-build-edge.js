@@ -3,10 +3,7 @@
  */
 import { zipSync, strToU8 } from "fflate";
 import { synthesizeEdgeMp3 } from "./edge-tts.js";
-import { r2MediaKey } from "./edge-imaging.js";
-
-const FORMAT_ID = "vae-offline-pack";
-const FORMAT_VERSION = 1;
+import { buildPackManifest } from "./pack-manifest.js";
 const MANIFEST_NAME = "vae/manifest.json";
 const BOOK_NAME = "vae/book.json";
 const VOICES_NAME = "vae/voices.json";
@@ -22,11 +19,15 @@ function intEnv(env, key, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
+function normalizeMediaUrl(url) {
+  return String(url || "").split("?")[0];
+}
+
 function collectMediaUrls(book) {
   const raw = JSON.stringify(book);
   const re = /\/media\/[^"'\s)]+/g;
   const found = new Set();
-  for (const m of raw.match(re) || []) found.add(m.split("?")[0]);
+  for (const m of raw.match(re) || []) found.add(normalizeMediaUrl(m));
   return [...found];
 }
 
@@ -42,6 +43,17 @@ async function loadR2Media(env, url, style) {
   if (!env.VAE_PACKS || !url?.startsWith("/media/")) return null;
   const rel = url.replace(/^\/media\//, "");
   return env.VAE_PACKS.get(`media/${rel}`);
+}
+
+async function loadResumeFromKv(env, bookId) {
+  if (!env?.VAE_JOBS || !bookId) return null;
+  const raw = await env.VAE_JOBS.get(`progress:${bookId}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 /** Build pack bytes; onProgress(0..1, detail). */
@@ -75,9 +87,18 @@ export async function buildPackOnEdge({
     dbg?.log("P4_PACK", `media ${mi}/${mediaUrls.length}`, { url, hit: Boolean(obj) });
   }
 
-  files[BOOK_NAME] = strToU8(JSON.stringify(bookCopy, null, 2));
   files[VOICES_NAME] = strToU8(JSON.stringify(book.voice_overrides || {}, null, 2));
   files[MEDIA_INDEX_NAME] = strToU8(JSON.stringify(mediaIndex, null, 2));
+
+  if (!bookCopy.cover) {
+    const coverUrl = mediaUrls.find((u) => /\/cover\.(png|jpe?g|webp)$/i.test(u));
+    if (coverUrl) bookCopy.cover = coverUrl;
+  }
+  if (!bookCopy.resume) {
+    const resume = await loadResumeFromKv(env, bookId);
+    if (resume) bookCopy.resume = resume;
+  }
+  files[BOOK_NAME] = strToU8(JSON.stringify(bookCopy, null, 2));
 
   const linesFlat = [];
   for (const scene of bookCopy.scenes || []) {
@@ -116,18 +137,18 @@ export async function buildPackOnEdge({
     files[AUDIO_MANIFEST_NAME] = strToU8(JSON.stringify(audioManifest, null, 2));
   }
 
-  const manifest = {
-    format: FORMAT_ID,
-    version: FORMAT_VERSION,
-    book_id: bookId,
+  const packStyle = style || book.art_style || "semi-real";
+  const manifest = buildPackManifest({
+    bookId,
+    title: book.title,
+    author: book.author,
     tier,
-    style: style || book.art_style || "semi-real",
-    created_at: new Date().toISOString(),
-    audio_engine: audioEngine,
-    line_count: linesFlat.length,
-    media_count: Object.keys(mediaIndex).length,
-    audio_line_count: audioManifest.length,
-  };
+    style: packStyle,
+    audioEngine,
+    lineCount: linesFlat.length,
+    mediaCount: Object.keys(mediaIndex).length,
+    audioLineCount: audioManifest.length,
+  });
   files[MANIFEST_NAME] = strToU8(JSON.stringify(manifest, null, 2));
 
   dbg?.log("P4_PACK", "zip", {

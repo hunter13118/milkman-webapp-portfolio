@@ -2,6 +2,7 @@
  * Pipeline registry for edge Worker — mirrors server/pipeline/registry.py.
  * Config persisted in KV `pipeline:config`; drives freemium chain order.
  */
+import { evaluateCostEfficiency } from "./pipeline-cost-guide.js";
 
 const KV_KEY = "pipeline:config";
 
@@ -10,6 +11,7 @@ const IMAGE_FREEMIUM_DEFAULT = [
   "pollinations-seed",
   "huggingface",
   "cloudflare",
+  "workers-ai",
 ];
 
 const STAGE_META = {
@@ -19,6 +21,28 @@ const STAGE_META = {
     tier: "primary",
     lane: "extract",
     requires: ["GEMINI_API_KEY"],
+  },
+  "ollama-7b": {
+    label: "Ollama 7B (local, fast)",
+    icon: "🏠",
+    tier: "local",
+    lane: "extract",
+    requires: [],
+    optionalEnv: ["OLLAMA_BASE_URL"],
+    modelEnv: "OLLAMA_MODEL_7B",
+    defaultModel: "qwen2.5:7b",
+    note: "Local dev only — smaller/faster model, needs `ollama serve` at OLLAMA_BASE_URL",
+  },
+  "ollama-14b": {
+    label: "Ollama 14B (local, quality)",
+    icon: "🏠",
+    tier: "local",
+    lane: "extract",
+    requires: [],
+    optionalEnv: ["OLLAMA_BASE_URL"],
+    modelEnv: "OLLAMA_MODEL_14B",
+    defaultModel: "qwen2.5:14b",
+    note: "Local dev only — larger/slower model, needs `ollama serve` at OLLAMA_BASE_URL",
   },
   cerebras: {
     label: "Cerebras",
@@ -104,9 +128,19 @@ const STAGE_META = {
     icon: "🤗",
     tier: "freemium",
     lane: "image_freemium",
-    requires: ["HF_TOKEN"],
+    requires: [],
+    optionalEnv: ["HF_TOKEN", "FAL_KEY", "FAL_AI_API_KEY"],
     modelEnv: "HF_IMAGE_MODEL",
     defaultModel: "black-forest-labs/FLUX.1-schnell",
+  },
+  "workers-ai": {
+    label: "Workers AI (FLUX)",
+    icon: "☁",
+    tier: "freemium",
+    lane: "image_freemium",
+    requires: [],
+    defaultModel: "@cf/black-forest-labs/flux-1-schnell",
+    note: "Edge AI binding — last resort; shares 10k neurons/day with extract",
   },
 };
 
@@ -120,8 +154,8 @@ const GEMINI_IMAGE_MODELS = [
 function laneDefault(lane) {
   const map = {
     extract: {
-      order: ["gemini", "cerebras", "groq", "mistral", "openrouter", "cloudflare"],
-      disabled: [],
+      order: ["ollama-7b", "ollama-14b", "gemini", "cerebras", "groq", "mistral", "openrouter", "cloudflare"],
+      disabled: ["ollama-14b"],
     },
     image: { order: ["gemini_image", "freemium_image", "local_sd"], disabled: [] },
     image_freemium_character: { order: [...IMAGE_FREEMIUM_DEFAULT], disabled: [] },
@@ -143,6 +177,10 @@ export function defaultConfig(env = {}) {
   };
   if (String(env.EXTRACT_SKIP_GEMINI ?? "true").toLowerCase() === "true") {
     cfg.extract.disabled = [...new Set([...(cfg.extract.disabled || []), "gemini"])];
+  }
+  // Ollama only makes sense when a local dev server is configured — never in production.
+  if (!String(env.OLLAMA_BASE_URL || "").trim()) {
+    cfg.extract.disabled = [...new Set([...(cfg.extract.disabled || []), "ollama-7b", "ollama-14b"])];
   }
   return cfg;
 }
@@ -218,6 +256,12 @@ export function stageAvailable(env, stageId) {
   if (stageId === "freemium_image") {
     if (String(env.DISABLE_FREEMIUM_IMAGE || "").toLowerCase() === "true") return false;
   }
+  if (stageId === "huggingface") {
+    return envPresent(env, "HF_TOKEN") || envPresent(env, "FAL_KEY") || envPresent(env, "FAL_AI_API_KEY");
+  }
+  if (stageId === "workers-ai") {
+    return Boolean(env.AI);
+  }
   if (stageId === "local_sd") return envPresent(env, "LOCAL_IMAGE_URL");
   return true;
 }
@@ -280,5 +324,6 @@ export async function publicView(env) {
     });
     lanes[lane] = { title: laneTitle(lane), items };
   }
-  return { lanes, config: cfg, source: persisted ? "edge-kv" : "edge-defaults" };
+  const cost_guide = evaluateCostEfficiency(cfg, env);
+  return { lanes, config: cfg, source: persisted ? "edge-kv" : "edge-defaults", cost_guide };
 }
