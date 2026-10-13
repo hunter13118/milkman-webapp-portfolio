@@ -53,8 +53,9 @@ max_batch_timeout = 30
 name = "JOB_EVENTS"
 class_name = "JobEventHub"
 
-# Already deployed as of this Worker's prior history — declared here for
-# clarity, not to create it fresh (see the "already exists" check on deploy).
+# Already applied on the live Worker. The tag MUST match the one Cloudflare has recorded for the
+# published script ("v1-job-events"); with a different tag Wrangler tries to apply it again and the API
+# rejects both `wrangler deploy` (code 10074) and `wrangler versions upload` (code 10211).
 [[migrations]]
-tag = "v1"
+tag = "v1-job-events"
 new_sqlite_classes = ["JobEventHub"]
