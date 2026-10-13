@@ -1,0 +1,4 @@
+# SPA fallback — every non-asset, non-function route serves the app shell.
+# Cloudflare Pages evaluates /functions/* before this, so /api/* still hits the
+# edge functions; everything else renders index.html for client-side routing.
+/*    /index.html   200

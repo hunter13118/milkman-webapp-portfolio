@@ -9,6 +9,4 @@ dist/
 .cursor/
 decisions.jsonl
 public/audit/
-public/projects/cloudpilot/
-worker/cloudpilot/
 .wrangler/
