@@ -712,3 +712,14 @@ main {
   font-size: 0.85rem;
   border-top: 1px solid var(--border);
 }
+
+.footer-private {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.footer-private a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
